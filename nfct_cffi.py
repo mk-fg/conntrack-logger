@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import itertools as it, operator as op, functools as ft
-import os, sys, re, errno, types, socket
+import os, sys, signal
 
 from cffi import FFI
 
@@ -157,7 +157,7 @@ class NFCT(object):
 		return self.libnfct_cache[k]
 
 
-	def generator(self, events=None, output_flags=None):
+	def generator(self, events=None, output_flags=None, handle_sigint=True):
 		'''Generator that yields:
 				- on first iteration - netlink fd that can be poll'ed
 					or integrated into some event loop (twisted, gevent, ...).
@@ -168,7 +168,8 @@ class NFCT(object):
 				events: mask for event types to capture
 					- or'ed NFNLGRP_CONNTRACK_* flags, None = all.
 				output_flags: which info will be in resulting xml
-					- or'ed NFCT_OF_* flags, None = set all.'''
+					- or'ed NFCT_OF_* flags, None = set all.
+				handle_sigint: add SIGINT handler to process it gracefully.'''
 
 		if events is None:
 			events = (
@@ -202,6 +203,15 @@ class NFCT(object):
 				raise
 			return self.libnfct.NFCT_CB_STOP # to yield processed data from generator
 
+		if handle_sigint:
+			global _sigint_raise
+			_sigint_raise = False
+			def sigint_handler(sig, frm):
+				global _sigint_raise
+				_sigint_raise = True
+				cb_results.append(StopIteration)
+			sigint_handler = signal.signal(signal.SIGINT, sigint_handler)
+
 		self.nfct_callback_register2(
 			handle, self.libnfct.NFCT_T_ALL, recv_callback, self.ffi.NULL )
 		try:
@@ -212,13 +222,15 @@ class NFCT(object):
 					continue
 				# No idea how many times callback will be used here
 				self.nfct_catch(handle)
+				if _sigint_raise: raise KeyboardInterrupt()
 				# Yield individual events
 				for result in cb_results:
-					if result is StopIteration: raise result
+					if result is StopIteration: raise result()
 					peek = yield result
 				cb_results = list()
 
 		finally:
+			if handle_sigint: signal.signal(signal.SIGINT, sigint_handler)
 			self.nfct_callback_unregister2(handle, no_check=True)
 			self.nfct_close(handle)
 
