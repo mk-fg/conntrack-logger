@@ -42,6 +42,7 @@ setup(
 		'Topic :: System :: Networking :: Monitoring',
 		'Topic :: System :: Operating System Kernels :: Linux' ],
 
+	install_requires = ['cffi'],
 	ext_modules = [NFCT().ffi.verifier.get_extension()],
 
 	py_modules = ['nfct_cffi', 'nfct_logger'],
