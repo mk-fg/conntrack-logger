@@ -67,7 +67,6 @@ enum nfct_of {
 	...
 };
 
-
 struct nfct_handle* nfct_open(u_int8_t subsys_id, unsigned int subscriptions);
 int nfct_close(struct nfct_handle * cth);
 int nfct_fd(struct nfct_handle *cth);

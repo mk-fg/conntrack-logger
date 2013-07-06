@@ -155,6 +155,8 @@ def main(argv=None):
 		action='store_true', help='Verbose operation mode.')
 	opts = parser.parse_args(argv or sys.argv[1:])
 
+	opts.format += '\n'
+
 	import logging
 	logging.basicConfig(level=logging.DEBUG if opts.debug else logging.WARNING)
 	global log
@@ -164,6 +166,7 @@ def main(argv=None):
 	src = nfct.generator(events=nfct.libnfct.NFNLGRP_CONNTRACK_NEW)
 	next(src) # netlink fd
 
+	log.debug('Started logging')
 	for ev_xml in src:
 		try: ev = parse_event(ev_xml)
 		except:
@@ -171,8 +174,9 @@ def main(argv=None):
 			continue
 		if not ev: continue
 		if opts.protocol and not re.search(opts.protocol, ev.proto): continue
-		print(opts.format.format( ev=ev,
+		sys.stdout.write(opts.format.format( ev=ev,
 			ts=ev.ts.strftime(opts.format_ts), info=get_flow_info(ev) ))
+		sys.stdout.flush()
 
 
 if __name__ == '__main__': sys.exit(main())
