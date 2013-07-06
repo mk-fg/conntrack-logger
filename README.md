@@ -102,8 +102,9 @@ without any installation.
 ### Requirements
 
 * Python 2.7 (not 3.X)
-* [libnetfilter_conntrack](http://www.netfilter.org/projects/libnetfilter_conntrack)
 * [CFFI](http://cffi.readthedocs.org) (for libnetfilter_log bindings)
+* [libnetfilter_conntrack](http://www.netfilter.org/projects/libnetfilter_conntrack)
+* nf_conntrack_netlink kernel module (e.g. `modprobe nf_conntrack_netlink`)
 
 CFFI uses C compiler to generate bindings, so gcc (or other compiler) should be
 available if module is being built from source or used from checkout tree.
