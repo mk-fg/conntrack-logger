@@ -32,7 +32,7 @@ def parse_event(ev_xml):
 			sport, dport = (l4.find(k).text for k in ['sport', 'dport'])
 			flow_data[meta.attrib['direction']] = FlowData(ts, proto, src, dst, sport, dport)
 
-	# Fairly sure all new flows have to be symmetrical, check that
+	# Fairly sure all new flows should be symmetrical, check that
 	fo, fr = op.itemgetter('original', 'reply')(flow_data)
 	assert fo.proto == fr.proto\
 		and fo.src == fr.dst and fo.dst == fr.src\
@@ -45,6 +45,11 @@ def parse_event(ev_xml):
 def main(argv=None):
 	import argparse
 	parser = argparse.ArgumentParser(description='conntrack event logging/audit tool.')
+	parser.add_argument('-t', '--ts-format', default='%s',
+		help='Timestamp format, as for datetime.strftime() (default: %(defauls)s).')
+	parser.add_argument('-f', '--format',
+		default='{ts}: {ev.proto} {ev.src}/{ev.sport} > {ev.dst}/{ev.dport}',
+		help='Output format for each new flow, as for str.format() (default: %(defauls)s).')
 	parser.add_argument('--debug',
 		action='store_true', help='Verbose operation mode.')
 	opts = parser.parse_args(argv or sys.argv[1:])
@@ -55,12 +60,11 @@ def main(argv=None):
 
 	nfct = NFCT()
 	src = nfct.generator(events=nfct.libnfct.NFNLGRP_CONNTRACK_NEW)
-	next(src) # fd
+	next(src) # netlink fd
 
 	for ev_xml in src:
-		# log.debug('Event: {}'.format(ev_xml))
-		flow = parse_event(ev_xml)
-		log.info('{0.proto} {0.src}/{0.sport} > {0.dst}/{0.dport}'.format(flow))
+		ev = parse_event(ev_xml)
+		print(opts.format.format(ev=ev, ts=ev.ts.strftime(opts.ts_format)))
 
 
 if __name__ == '__main__': sys.exit(main())
