@@ -129,13 +129,17 @@ def get_flow_info(flow, _nx=FlowInfo(), _cache=dict()):
 	pid = cache[sk]
 
 	cache = _cache['info']
-	pid_ts = int(pid_info(pid, 'stat').split()[21])
-	if pid in cache:
+	try: pid_ts = int(pid_info(pid, 'stat').split()[21])
+	except OSError:
+		log.info('Failed to query pid info for {}'.format(ip_key))
+		return _nx
+	else:
+		if pid in cache:
+			info_ts, info = cache[pid]
+			if pid_ts != info_ts: del cache[pid] # check starttime to detect pid rotation
+		if pid not in cache:
+			cache[pid] = pid_ts, FlowInfo(pid)
 		info_ts, info = cache[pid]
-		if pid_ts != info_ts: del cache[pid] # check starttime to detect pid rotation
-	if pid not in cache:
-		cache[pid] = pid_ts, FlowInfo(pid)
-	info_ts, info = cache[pid]
 
 	return info
 
