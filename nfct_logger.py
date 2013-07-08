@@ -71,7 +71,7 @@ def get_table_links():
 	links = list()
 	for path in glob.iglob('/proc/[0-9]*/fd/[0-9]*'):
 		try: link = os.readlink(path)
-		except OSError as err:
+		except (OSError, IOError) as err:
 			if err.errno != errno.ENOENT: raise
 			continue
 		links.append((path, link))
@@ -81,8 +81,22 @@ def get_table_links():
 		yield match.group(1), int(re.search(r'^/proc/(\d+)/', path).group(1))
 
 
+class ProcReadFailure(Exception):
+	errno = 0
+	def __init__(self, err):
+		if isinstance(err, (OSError, IOError)):
+			self.errno = err.errno
+			err = err.message
+		super(ProcReadFailure, self).__init__(err)
+
+def proc_get(path):
+	try: return open(path).read()
+	except (OSError, IOError) as err:
+		if err.errno != errno.ENOENT: raise
+		raise ProcReadFailure(err)
+
 def pid_info(pid, entry):
-	return open('/proc/{}/{}'.format(pid, entry)).read()
+	return proc_get('/proc/{}/{}'.format(pid, entry))
 
 class FlowInfo(namedtuple('FlowInfo', 'pid uid gid cmdline service')):
 	__slots__ = tuple()
@@ -94,7 +108,7 @@ class FlowInfo(namedtuple('FlowInfo', 'pid uid gid cmdline service')):
 				cmdline, service = (pid_info(pid, k) for k in ['cmdline', 'cgroup'])
 				stat = os.stat('/proc/{}'.format(pid))
 				uid, gid = op.attrgetter('st_uid', 'st_gid')(stat)
-			except OSError:
+			except (OSError, IOError, ProcReadFailure) as err:
 				if err.errno != errno.ENOENT: raise
 			if cmdline != '-': cmdline = cmdline.replace('\0', ' ').strip()
 			if service != '-':
@@ -130,7 +144,7 @@ def get_flow_info(flow, _nx=FlowInfo(), _cache=dict()):
 
 	cache = _cache['info']
 	try: pid_ts = int(pid_info(pid, 'stat').split()[21])
-	except OSError:
+	except ProcReadFailure:
 		log.info('Failed to query pid info for {}'.format(ip_key))
 		return _nx
 	else:
