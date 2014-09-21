@@ -192,6 +192,7 @@ def main(argv=None):
 			continue
 		if not ev: continue
 		if opts.protocol and not re.search(opts.protocol, ev.proto): continue
+		log.debug('Event: {}'.format(ev))
 		sys.stdout.write(opts.format.format( ev=ev,
 			ts=ev.ts.strftime(opts.format_ts), info=get_flow_info(ev) ))
 		sys.stdout.flush()
