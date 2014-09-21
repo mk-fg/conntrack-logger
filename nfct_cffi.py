@@ -221,7 +221,7 @@ class NFCT(object):
 					continue
 				# No idea how many times callback will be used here
 				self.nfct_catch(handle)
-				if _sigint_raise: raise KeyboardInterrupt()
+				if handle_sigint and _sigint_raise: raise KeyboardInterrupt()
 				# Yield individual events
 				for result in cb_results:
 					if result is StopIteration: raise result()
