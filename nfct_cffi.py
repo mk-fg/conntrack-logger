@@ -211,21 +211,25 @@ class NFCT(object):
 				cb_results.append(StopIteration)
 			sigint_handler = signal.signal(signal.SIGINT, sigint_handler)
 
+		def break_check(val):
+			if val is StopIteration: raise val()
+			return val
+
 		self.nfct_callback_register2(
 			handle, self.libnfct.NFCT_T_ALL, recv_callback, self.ffi.NULL )
 		try:
-			peek = yield self.nfct_fd(handle) # yield fd for poll() on first iteration
+			peek = break_check((yield self.nfct_fd(handle))) # yield fd for poll() on first iteration
 			while True:
 				if peek:
-					peek = yield NFWouldBlock # poll/recv is required
+					peek = break_check((yield NFWouldBlock)) # poll/recv is required
 					continue
 				# No idea how many times callback will be used here
 				self.nfct_catch(handle)
 				if handle_sigint and _sigint_raise: raise KeyboardInterrupt()
 				# Yield individual events
 				for result in cb_results:
-					if result is StopIteration: raise result()
-					peek = yield result
+					break_check(result)
+					peek = break_check((yield result))
 				cb_results = list()
 
 		finally:
