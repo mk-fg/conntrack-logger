@@ -92,7 +92,8 @@ class ProcReadFailure(Exception):
 def proc_get(path):
 	try: return open(path).read()
 	except (OSError, IOError) as err:
-		if err.errno != errno.ENOENT: raise
+		# errno.ESRCH is "IOError: [Errno 3] No such process"
+		if err.errno not in [errno.ENOENT, errno.ESRCH]: raise
 		raise ProcReadFailure(err)
 
 def pid_info(pid, entry):
