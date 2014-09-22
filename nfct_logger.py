@@ -182,8 +182,17 @@ def main(argv=None):
 	log = logging.getLogger()
 
 	nfct = NFCT()
+
+	# I have no idea why, but unless I init "all events" conntrack
+	#  socket once after boot, no events ever make it past NFNLGRP_CONNTRACK_NEW.
+	# So just get any event here jic and then init proper handlers.
+	src = nfct.generator()
+	next(src)
+	try: src.send(StopIteration)
+	except StopIteration: pass
+
 	src = nfct.generator(events=nfct.libnfct.NFNLGRP_CONNTRACK_NEW)
-	next(src) # netlink fd
+	netlink_fd = next(src) # can be polled, but not used here
 
 	log.debug('Started logging')
 	for ev_xml in src:
