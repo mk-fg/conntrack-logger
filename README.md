@@ -102,7 +102,7 @@ without any installation.
 ### Requirements
 
 * Python 2.7 (not 3.X)
-* [CFFI](http://cffi.readthedocs.org) (for libnetfilter_log bindings)
+* [CFFI](http://cffi.readthedocs.org) (for libnetfilter_conntrack bindings)
 * [libnetfilter_conntrack](http://www.netfilter.org/projects/libnetfilter_conntrack)
 * nf_conntrack_netlink kernel module (e.g. `modprobe nf_conntrack_netlink`)
 
