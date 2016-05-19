@@ -20,9 +20,9 @@ e.g. forked curl, hence not useful by itself) and services they belong to,
 assuming proper service-pid-tracking system (i.e. systemd cgroups) is in place.
 
 Unlike e.g. [netstat-monitor](https://github.com/stalexan/netstat-monitor/), it
-doesn't poll `/proc/net/*` paths, getting "new flow" events via
-libnetfilter_conntrack (netlink socket) instead, so should catch even the most
-transient flows and not hog any extra locks on polling.
+doesn't poll `/proc/net/*` paths (though still uses them to map flow back to
+pid), getting "new flow" events via libnetfilter_conntrack (netlink socket)
+instead, in a bit more efficient manner.
 
 
 
@@ -108,3 +108,27 @@ without any installation.
 
 CFFI uses C compiler to generate bindings, so gcc (or other compiler) should be
 available if module is being built from source or used from checkout tree.
+
+
+
+Limitations
+--------------------
+
+When new flow event is received from libnetfilter_conntrack, it
+[doesn't have "pid" attribute](https://git.netfilter.org/libnetfilter_conntrack/tree/include/libnetfilter_conntrack/libnetfilter_conntrack.h#n62)
+associated with it, so script looks up corresponding line in `/proc/net/*` to
+pick "inode" number for connection from there, then does
+`glob('/proc/[0-9]*/fd/[0-9]*')`, readlink() on each to find which one leads to
+socket matching that inode and then grabs/prints info for the pid from there on
+match.
+
+So for super-quick connections, slow pid context switching, lots of pids or
+something, it might fail to match socket/pid in time, while both are still
+around, printing only connection info instead.
+
+Running curl on even the fastest url probably won't ever slip by the logging,
+but some fast app opening socket, sending a packet, then closing it immediately
+afterwards can do that.
+
+[auditd](https://people.redhat.com/sgrubb/audit) is probably a tool to track
+such things in a more dedicated way.
