@@ -130,7 +130,7 @@ def get_flow_info(flow, _nx=FlowInfo(), _cache=dict()):
 		cache.clear()
 		cache.update(get_table_sk(flow.proto))
 	if ip_key not in cache:
-		log.info('Failed to find connection for {}'.format(ip_key))
+		log.info('Failed to find connection for %s', ip_key)
 		return _nx
 	sk = cache[ip_key]
 
@@ -139,14 +139,14 @@ def get_flow_info(flow, _nx=FlowInfo(), _cache=dict()):
 		cache.clear()
 		cache.update(get_table_links())
 	if sk not in cache:
-		log.info('Failed to find pid for {}'.format(ip_key))
+		log.info('Failed to find pid for %s', ip_key)
 		return _nx
 	pid = cache[sk]
 
 	cache = _cache['info']
 	try: pid_ts = int(pid_info(pid, 'stat').split()[21])
 	except ProcReadFailure:
-		log.info('Failed to query pid info for {}'.format(ip_key))
+		log.info('Failed to query pid info for %s', ip_key)
 		return _nx
 	else:
 		if pid in cache:
@@ -202,10 +202,9 @@ def main(argv=None):
 			continue
 		if not ev: continue
 		if opts.protocol and not re.search(opts.protocol, ev.proto): continue
-		log.debug('Event: {}'.format(ev))
+		log.debug('Event: %s', ev)
 		sys.stdout.write(opts.format.format( ev=ev,
 			ts=ev.ts.strftime(opts.format_ts), info=get_flow_info(ev) ))
 		sys.stdout.flush()
-
 
 if __name__ == '__main__': sys.exit(main())
