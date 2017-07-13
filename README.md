@@ -110,10 +110,9 @@ CFFI uses C compiler to generate bindings, so gcc (or other compiler) should be
 available if module is being built from source or used from checkout tree.
 
 To install these requirements on Debian/Ubuntu (tested on Ubuntu "Xenial"
-16.04), you can use:
+16.04), use:
 
-    sudo apt-get install build-essential libnfnetlink-dev python-cffi \
-        libnetfilter-conntrack-dev libpython2.7-dev
+	# apt install build-essential libnfnetlink-dev python-cffi libnetfilter-conntrack-dev libpython2.7-dev
 
 
 Limitations
