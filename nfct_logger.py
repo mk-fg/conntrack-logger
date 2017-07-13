@@ -197,8 +197,8 @@ def main(argv=None):
 	log.debug('Started logging')
 	for ev_xml in src:
 		try: ev = parse_event(ev_xml)
-		except:
-			log.error('Failed to parse event data: {}'.format(ev_xml))
+		except Exception as err:
+			log.exception('Failed to parse event data: %r', ev_xml)
 			continue
 		if not ev: continue
 		if opts.protocol and not re.search(opts.protocol, ev.proto): continue
