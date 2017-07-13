@@ -25,7 +25,7 @@ def parse_event(ev_xml):
 
 	flow_data = dict()
 	for meta in flow.findall('meta'):
-		if meta.attrib['direction'] in ['original', 'reply']:
+		if meta.attrib['direction'] in ['original']:
 			l3, l4 = it.imap(meta.find, ['layer3', 'layer4'])
 			proto = l3.attrib['protoname'], l4.attrib['protoname']
 			if proto[1] not in ['tcp', 'udp']: return
@@ -34,12 +34,13 @@ def parse_event(ev_xml):
 			sport, dport = (int(l4.find(k).text) for k in ['sport', 'dport'])
 			flow_data[meta.attrib['direction']] = FlowData(ts, proto, src, dst, sport, dport)
 
-	# Fairly sure all new flows should be symmetrical, check that
-	fo, fr = op.itemgetter('original', 'reply')(flow_data)
-	assert fo.proto == fr.proto\
-		and fo.src == fr.dst and fo.dst == fr.src\
-		and fo.sport == fr.dport and fo.dport == fr.sport,\
-		flow_data
+	## Fairly sure tcp table should contain stuff from original flow,
+	##  otherwise check here should probably pick direction somehow
+	# fo, fr = op.itemgetter('original', 'reply')(flow_data)
+	# assert fo.proto == fr.proto\
+	# 	and fo.src == fr.dst and fo.dst == fr.src\
+	# 	and fo.sport == fr.dport and fo.dport == fr.sport,\
+	# 	flow_data
 
 	return flow_data['original']
 
@@ -197,7 +198,7 @@ def main(argv=None):
 	log.debug('Started logging')
 	for ev_xml in src:
 		try: ev = parse_event(ev_xml)
-		except Exception as err:
+		except:
 			log.exception('Failed to parse event data: %r', ev_xml)
 			continue
 		if not ev: continue
